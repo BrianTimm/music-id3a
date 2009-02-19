@@ -1,0 +1,137 @@
+# music-id3a - a music manager/organizer
+#
+# Written By: Brian Timm
+# Last Edited: 2-18-2009
+# Version: 1.10b
+#
+# Music base directory
+musdir="/Users/MannyG/Music"
+logdir="/Users/MannyG/Documents"
+logfile="$logdir"/music-id3a.log
+
+# make sure we can access the Music and logfile directories and that appropriate subdirectories exist.
+if [ ! -d "$musdir" ]; then
+    echo "cannot access \"$musdir\" make sure it exists and is accessible"
+    exit 1
+fi
+if [ ! -d "$musdir"/collection ]; then
+    mkdir "$musdir"/collection
+fi
+if [ ! -d "$musdir"/tags-needed ]; then
+    mkdir "$musdir"/tags-needed
+fi
+
+if [ ! -d "$logdir" ]; then
+    echo "cannot access \"$logdir\" make sure it exists and is accessible"
+    exit 2
+fi
+
+# create logs file if it doesn't already exist, and
+# put the time and date in the log file to differentiate runs of the script
+if [ ! -a "$logdir"/music-id3a.log ]; then
+    echo "Logfile for music-id3a general, tag, and conversion errors as well as status." >> "$logfile"
+fi
+echo "<--------------------Start: $(date)-------------------->" >> "$logfile"
+declare -i starttime=$SECONDS
+
+# pull any files in folders out of their folders
+echo "Pulling any files in folders out of folders for processing" >> "$logfile"
+for folder in "$musdir"/unsorted/*/*; do
+    if [ -d "$folder" ]; then
+            mv "$folder"/*.* "$musdir"/unsorted/
+    elif [ "" = "${folder##*.}" ]; then
+        mv "$folder" "$musdir"/unsorted/"${folder##/*/}"
+    fi
+done
+echo "Files pulled out of folders successfully. Processing took $(($SECONDS-starttime)) seconds." >> "$logfile"
+
+# start processing files, setup logging variables
+declare -i startproc=$SECONDS
+declare -i numfiles=0
+declare -i numtags=0
+declare -i numconv=0
+declare -i numerr=0
+for filename in "$musdir"/unsorted/*.*; do
+
+# make sure we actually have some files to process
+    if [ "$filename" = "$musdir"/unsorted/'*.*' ]; then
+        echo "no files to process, exiting" >> music-id3a.log
+        exit 0
+    fi
+
+# check filetype (non-mp3's need conversion)
+    filetype="${filename##*.}"
+    if [ "$filetype" != "mp3" ]; then
+        if [ ! -d "$musdir"/"$filetype" ]; then
+            mkdir "$musdir"/"$filetype"
+        fi
+    
+# move the file to a folder specific to it's filetype.
+        mv "$filename" "$musdir"/$filetype/"${filename##/*/}"
+        echo "FILETYPE ERROR: $musdir/$filetype/${filename##/*/} not an mp3, requires conversion" >> "$logfile"
+        ((numconv++))
+        ((numfiles++))
+        continue
+    fi
+    
+# Grab all the tags
+    ar="$(id3v2 -l "$filename" | grep -E TPE?1 | sed -e 's/^.*:\ //g')"
+    al="$(id3v2 -l "$filename" | grep -E TALB? | sed -e 's/^.*:\ //g')"
+    ti="$(id3v2 -l "$filename" | grep -E TI?T2 | sed -e 's/^.*:\ //g')"
+    track="$(id3v2 -l "$filename" | grep -E TRC?K | sed -e 's/^.*:\ //g')"
+    genre="$(id3v2 -l "$filename" | grep -E TCON | sed -e 's/^.*:\ //g')"
+
+# replace all forward slashes with underscores in artist, album, and title
+artist=$ar|sed "s!/!_!g"
+album=$al|sed "s!/!_!g"
+title=$ti|sed "s!/!_!g"
+    
+# check if any of the "critical" tags are missing
+    if [ -z "$artist" ] || [ -z "$album" ] || [ -z "$title" ]; then
+        mv "$filename" "$musdir"/tags-needed/
+        echo "--TAG ERROR: $musdir/tags-needed/${filename##/*/} missing \"critical\" tag(s)" >> "$logfile"
+        ((numerr++))
+        ((numfiles++))
+    else
+                
+# remove the annoying / and total track number, rename file
+        track=${track%%/*}
+        if [ -n "$track" ]; then
+            newfilename="$track-$title.mp3"
+        else
+            newfilename="$title.mp3"
+        fi
+        
+# make sure all the necessary directories are there
+        if [ ! -d "$musdir"/collection/"$artist" ]; then
+            mkdir "$musdir"/collection/"$artist"
+        fi
+        if [ ! -d "$musdir"/collection/"$artist"/"$album" ]; then
+            mkdir "$musdir"/collection/"$artist"/"$album"
+        fi
+        
+# rename the file, move it to it's new home.
+        mv "$filename" "$musdir"/collection/"$artist"/"$album"/"$newfilename"
+        ((numfiles++))
+
+# check for non-critical tag(s), just report to logfile
+        if [ -z "$genre" ]; then
+            echo "TAG WARNING: collection/$artist/$album/$newfilename missing genre tag" >> "$logfile"
+            ((numtags++))
+        fi
+    fi
+done
+
+# uncomment following line to auto-clean up the unsorted folder
+# rm -rf "$musdir"/unsorted/*
+
+# print out success message, put stats in logfile
+echo "SUCCESS! music-id3a has sorted your files"
+echo "<--------------------music-id3a finished processing-------------------->" >> "$logfile"
+echo "total runtime: $(($SECONDS-$starttime)) seconds" >> "$logfile"
+echo "number of files processed: $numfiles" >> "$logfile"
+echo "file processing time: $(($SECONDS-$startproc)) seconds" >> "$logfile"
+echo "number of files missing critical tags: $numerr" >> "$logfile"
+echo "number of files missing non-critical checked tags: $numtags" >> "$logfile"
+echo "number of files requiring conversion to mp3 format: $numconv" >> "$logfile"
+echo "<--------------------Finished: $(date)-------------------->" >> "$logfile"
