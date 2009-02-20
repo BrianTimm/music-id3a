@@ -7,19 +7,24 @@ BEFORE running music-id3a for the first time:
 
 what music-id3a does:
 1. music-id3a will take all files out of their folders within unsorted(up to 2 folders deep).
-2. Then all id3 tags will be checked, if a song is missing artist, album, or title tag information it will be placed in a tags-needed folder (there will also be a record of it in the log file.
+2. Then all id3 tags will be checked, if a song is missing
+artist, album, or title tag information
+it will be placed in a tags-needed folder,
+there will also be a record of it in the log file.
 3. If a song is missing a genre tag it will be logged
-4. any file with an extension that isn't mp3 will be placed in a folder named with it's extension (i.e. ogg) so that you can easily convert them later.
+4. any file with an extension that isn't mp3 will be placed in a folder named with it's extension (i.e. ogg)
+so that you can easily convert them later.
 5. songs will be placed in the collection folder and will be put into this folder structure:
     musdir/collection/artist/album/track#-title.mp3
 if track# is missing from the id3 tag the file will be just title.mp3
-6. (optional) down towards the bottom of music-id3a there's a line you can uncomment to have music-id3a clean up the unsorted folder after all the files have been sorted.
+6. (optional) down towards the bottom of music-id3a there's a line you can uncomment
+to have music-id3a clean up the unsorted folder after all the files have been sorted.
 
 planned features for 1.10:
 - use of a config file for easier configuration
 - some terminal output to keep the user updated on what the script is doing
 - ability to configure which tags are critical
 
-planne features for some future version(probably 2.0):
+planned features for some future version(probably 2.0):
 - automated conversion of common filetypes
 - automated install (with an install-script)
