@@ -1,13 +1,18 @@
 # music-id3a - a music manager/organizer
 #
 # Written By: Brian Timm
-# Last Edited: 2-18-2009
-# Version: 1.10b
+# Last Edited: 2-20-2009
+# Version: 1.01
 #
+##########EDIT BELOW THIS LINE ONLY##########
+
 # Music base directory
-musdir="/Users/MannyG/Music"
-logdir="/Users/MannyG/Documents"
+musdir="<full path to your music directory here>"
+logdir="<full path to your log directory here>"
+# you can change the log file's name right here
 logfile="$logdir"/music-id3a.log
+
+##########DO NOT EDIT BELOW THIS LINE##########
 
 # make sure we can access the Music and logfile directories and that appropriate subdirectories exist.
 if [ ! -d "$musdir" ]; then
@@ -121,9 +126,12 @@ title=$ti|sed "s!/!_!g"
         fi
     fi
 done
+##########EDIT BELOW THIS LINE, OPTIONAL##########
 
 # uncomment following line to auto-clean up the unsorted folder
 # rm -rf "$musdir"/unsorted/*
+
+##########DO NOT EDIT BELOW THIS LINE##########
 
 # print out success message, put stats in logfile
 echo "SUCCESS! music-id3a has sorted your files"
