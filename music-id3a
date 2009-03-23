@@ -1,26 +1,24 @@
+#! /bin/bash
 # music-id3a - a music manager/organizer
 #
 # Written By: Brian Timm
-# Last Edited: 2-20-2009
-# Version: 1.01
+# Last Edited: 3-23-2009
+# Version: 1.02e
 #
-##########EDIT BELOW THIS LINE ONLY##########
 
-# Music base directory
-musdir="<full path to your music directory here>"
-logdir="<full path to your log directory here>"
-# you can change the log file's name right here
-logfile="$logdir"/music-id3a.log
-
-##########DO NOT EDIT BELOW THIS LINE##########
+source music-id3a.cfg
+logfile="$logdir"/"$logfilename"
 
 # make sure we can access the Music and logfile directories and that appropriate subdirectories exist.
 if [ ! -d "$musdir" ]; then
     echo "cannot access \"$musdir\" make sure it exists and is accessible"
     exit 1
 fi
-if [ ! -d "$musdir"/collection ]; then
-    mkdir "$musdir"/collection
+if [ ! -d "$coldir" ]; then
+    coldir="$musdir"/collection
+    if [ ! -d "$coldir" ]; then
+        mkdir "$coldir"
+    fi
 fi
 if [ ! -d "$musdir"/tags-needed ]; then
     mkdir "$musdir"/tags-needed
@@ -108,30 +106,28 @@ title=$ti|sed "s!/!_!g"
         fi
         
 # make sure all the necessary directories are there
-        if [ ! -d "$musdir"/collection/"$artist" ]; then
-            mkdir "$musdir"/collection/"$artist"
+        if [ ! -d "$coldir"/"$artist" ]; then
+            mkdir "$coldir"/"$artist"
         fi
-        if [ ! -d "$musdir"/collection/"$artist"/"$album" ]; then
-            mkdir "$musdir"/collection/"$artist"/"$album"
+        if [ ! -d "$coldir"/"$artist"/"$album" ]; then
+            mkdir "$coldir"/"$artist"/"$album"
         fi
         
 # rename the file, move it to it's new home.
-        mv "$filename" "$musdir"/collection/"$artist"/"$album"/"$newfilename"
+        mv "$filename" "$coldir"/"$artist"/"$album"/"$newfilename"
         ((numfiles++))
 
 # check for non-critical tag(s), just report to logfile
         if [ -z "$genre" ]; then
-            echo "TAG WARNING: collection/$artist/$album/$newfilename missing genre tag" >> "$logfile"
+            echo "TAG WARNING: \"$coldir\"/$artist/$album/$newfilename missing genre tag" >> "$logfile"
             ((numtags++))
         fi
     fi
 done
-##########EDIT BELOW THIS LINE, OPTIONAL##########
 
-# uncomment following line to auto-clean up the unsorted folder
-# rm -rf "$musdir"/unsorted/*
-
-##########DO NOT EDIT BELOW THIS LINE##########
+if [ "$clean" = "yes" ]; then
+    rm -rf "$musdir"/unsorted/*
+fi
 
 # print out success message, put stats in logfile
 echo "SUCCESS! music-id3a has sorted your files"
